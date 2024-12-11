@@ -94,7 +94,7 @@ class OpenAIAuthenticator:
 
 def api_authentication():
     # load_dotenv()
-    openai_key = st.secrets["OpenAI_key"]
+    openai_key = st.secrets["OPENAI_API_KEY"]
     # st.write(openai_key)
     # if not st.session_state.api_authenticated:
     #     openai_key = st.text_input("OpenAI API Key:", type="password")
