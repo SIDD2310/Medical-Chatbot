@@ -1,6 +1,5 @@
 import streamlit as st
 from dotenv import load_dotenv
-from werkzeug.utils import secure_filename
 import os
 import openai
 from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
@@ -79,36 +78,6 @@ def process_docs(pdf_docs, TEMP, MODEL):
     st.session_state.pdf_processed = True
 
 
-def pdf_analytics(pdf_docs):
-    all_text = ""
-    if st.session_state.pdf_analytics_enabled:
-        with st.expander("PDF Analytics", expanded=False):
-            for pdf in pdf_docs:
-                st.subheader(str(secure_filename(pdf.name)))
-                text = get_pdf_text(pdf)
-                all_text += text
-
-                if st.session_state.display_word_count:
-                    st.markdown(f'<p class="small-font"># of Words: {len(text.split())}</p>', unsafe_allow_html=True)
-
-                if st.session_state.display_char_count:
-                    st.markdown(f'<p class="small-font"># of Characters: {len(text)}</p>', unsafe_allow_html=True)
-
-                if st.session_state.display_vaders:
-                    vaders_barchart(text, name=str(secure_filename(pdf.name)))
-
-            if len(pdf_docs) > 1:
-                if any([st.session_state.display_word_count, st.session_state.display_char_count, st.session_state.display_vaders]):
-                    st.subheader("Collective Summary:")
-                    if st.session_state.display_word_count:
-                        st.markdown(f'<p class="small-font"># of Words: {len(all_text.split())}</p>', unsafe_allow_html=True)
-
-                    if st.session_state.display_char_count:
-                        st.markdown(f'<p class="small-font"># of Characters: {len(all_text)}</p>', unsafe_allow_html=True)
-
-                    if st.session_state.display_vaders:
-                        vaders_barchart(all_text, name=str(secure_filename(pdf_docs[-1].name)))
-
 
 class OpenAIAuthenticator:
     @staticmethod
@@ -154,29 +123,12 @@ def chatbot_settings():
     
 
 
-def pdf_analytics_settings():
-    with st.expander("PDF Analytics Settings", expanded=True):
-        enable_pdf_analytics = st.checkbox("Enable PDF Analytics")
-        if enable_pdf_analytics:
-            st.session_state.pdf_analytics_enabled = True
-            st.caption("PDF Analytics Enabled")
-            st.caption("Display Options")
-
-            st.session_state.display_char_count = st.checkbox("Character Count")
-            st.session_state.display_word_count = st.checkbox("Word Count")
-            st.session_state.display_vaders = st.checkbox("VADER Sentiment Analysis")
-
-        else:
-            st.session_state.pdf_analytics_enabled = False
-            st.caption("PDF Analytics Disabled")
-
 def sidebar():
     global pdf_docs
     with st.sidebar:
         with st.expander("OpenAI API Authentication", expanded=True):
             api_authentication()
         chatbot_settings()
-        pdf_analytics_settings()
         with st.expander("Your Documents", expanded=True):
             pdf_docs = st.file_uploader("Upload your PDFs here", accept_multiple_files=True)
             if st.button("Process Files + New Chat"):
@@ -187,15 +139,6 @@ def sidebar():
                     st.caption("Please Upload At Least 1 PDF")
                     st.session_state.pdf_processed = False
 
-
-def get_text_chunks_with_metadata(pdf_docs):
-    text_chunks = []
-    for pdf in pdf_docs:
-        pdf_text = get_pdf_text(pdf)
-        chunks = get_text_chunks(pdf_text)
-        for chunk in chunks:
-            text_chunks.append({"text": chunk, "metadata": {"source": secure_filename(pdf.name)}})
-    return text_chunks
 
 def main():
     st.set_page_config(page_title="Multi-Document Chat Bot", page_icon=":books:")
@@ -216,12 +159,12 @@ def main():
             - Full name
             - Date of birth
             - Age 
-            - Gender.
+            - Gender
             - Marital status
             - Occupation
-            - Living situation.
+            - Living situation
             - Date of the report
-            - Author.
+            - Author
 
             Reason for Referral
             - Primary concerns leading to assessment or treatment.
@@ -309,7 +252,6 @@ def main():
         )
         if st.session_state.get("pdf_processed") and st.session_state.api_authenticated:
             prompt = PROMPT_TEMPLATE
-            pdf_analytics(pdf_docs)
             with st.form("user_input_form"):
                 user_question = st.text_input("Ask a question about your documents:")
                 send_button = st.form_submit_button("Send")
