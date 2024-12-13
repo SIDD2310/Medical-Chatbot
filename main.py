@@ -2,7 +2,7 @@ import streamlit as st
 from dotenv import load_dotenv
 import os
 import openai
-from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
+from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
@@ -13,7 +13,7 @@ from langchain.llms import HuggingFaceHub
 from htmlTemplates import css, bot_template, user_template
 from codeDisplay import display_code
 from textFunctions import get_pdf_text, get_pdfs_text, get_text_chunks
-from vizFunctions import roberta_barchat, vaders_barchart
+
 
 
 
@@ -33,7 +33,7 @@ def init_ses_states():
 
 
 def get_vectorstore(text_chunks):
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vectorstore
 
@@ -95,6 +95,7 @@ class OpenAIAuthenticator:
 def api_authentication():
     # load_dotenv()
     openai_key = st.secrets["OPENAI_API_KEY"]
+    # openai_key = os.getenv("OPENAI_API_KEY")
     # st.write(openai_key)
     # if not st.session_state.api_authenticated:
     #     openai_key = st.text_input("OpenAI API Key:", type="password")
@@ -267,4 +268,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
