@@ -8,7 +8,6 @@ from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-
 from htmlTemplates import css, bot_template, user_template
 from textFunctions import get_pdf_text, get_pdfs_text, get_text_chunks
 
@@ -95,6 +94,7 @@ def process_docs(pdf_docs, TEMP, MODEL):
 
 
 class OpenAIAuthenticator:
+    global llm
     @staticmethod
     def authenticate(api_key):
         if not api_key: return False
@@ -355,6 +355,36 @@ Use this detailed structure to ensure all responses are exhaustive, well-organiz
             st.caption("Please Upload Atleast 1 PDF Before Proceeding")
         if not st.session_state.api_authenticated:
             st.caption("Please Authenticate OpenAI API Before Proceeding")
+    with transcribe:
+        from openai import OpenAI
+        client = OpenAI()
+
+        # Set up the Streamlit interface
+        st.title("MP3 File Transcription App")
+
+        # Allow the user to upload an MP3 file
+        uploaded_file1 = st.file_uploader("Upload an MP3 file", type=["mp3"])
+
+        if uploaded_file1 is not None:
+            try:
+                # Display a message to the user
+                st.info("Transcribing your audio file, please wait...")
+
+                # Perform transcription using Whisper API
+                transcription = client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=uploaded_file1
+                )
+
+                # Display the transcription
+                st.subheader("Transcription")
+                st.text(transcription.text)
+
+            except Exception as e:
+                # Handle any errors that occur
+                st.error(f"An error occurred: {e}")
+        else:
+            st.write("Please upload an MP3 file to begin.")
 
 
 
