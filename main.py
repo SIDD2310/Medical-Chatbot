@@ -360,7 +360,7 @@ Use this detailed structure to ensure all responses are exhaustive, well-organiz
         client = OpenAI()
 
         # Set up the Streamlit interface
-        st.title("MP3 File Transcription App")
+        st.title("Ambient AI Note Generation")
 
         # Allow the user to upload an MP3 file
         uploaded_file1 = st.file_uploader("Upload an MP3 file", type=["mp3"])
