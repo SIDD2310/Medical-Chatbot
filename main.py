@@ -75,7 +75,6 @@ def generate_summary(prompt_chain):
     st.session_state.chat_history.append(combined_output)
     return combined_output
 
-
     # Generate summary
 predefined_prompts_conflict = [
     """
@@ -86,7 +85,7 @@ predefined_prompts_conflict = [
       - Evidence of dose mismatches, skipped doses, or denial of medication during manic or depressive phases.
       Only give the answer to the questions asked. Do not provide any additional information.
       Write it in short and in bullet points.
-      If you dont know the answer or if the context does not provide specific details then dont give any answer.
+      If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
     """
@@ -96,7 +95,7 @@ predefined_prompts_conflict = [
       - Missing or incomplete details about reported legal incidents.
       Only give the answer to the questions asked. Do not provide any additional information.
       Write it in short and in bullet points.
-      If you dont know the answer or if the context does not provide specific details then dont give any answer.
+      If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
     """
@@ -106,7 +105,7 @@ predefined_prompts_conflict = [
       - Contradictions between self-reported stability and documented functional impairments (e.g., job loss, hospitalization).
     Only give the answer to the questions asked. Do not provide any additional information.
       Write it in short and in bullet points.
-      If you dont know the answer or if the context does not provide specific details then dont give any answer.
+      If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
     """
@@ -116,7 +115,7 @@ predefined_prompts_conflict = [
       - Conflicting accounts of family relationships, support levels, or the patient’s behavior during manic or depressive phases.
     Only give the answer to the questions asked. Do not provide any additional information.
       Write it in short and in bullet points.
-      If you dont know the answer or if the context does not provide specific details then dont give any answer.
+      If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
     """
@@ -126,7 +125,7 @@ predefined_prompts_conflict = [
       - Conflicting reasons for unemployment (e.g., voluntary resignation vs. termination).
       Only give the answer to the questions asked. Do not provide any additional information.
       Write it in short and in bullet points.
-      If you dont know the answer or if the context does not provide specific details then dont give any answer.
+      If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
     """
@@ -136,7 +135,7 @@ predefined_prompts_conflict = [
       - Conflicts between clinical notes, family input, and the patient’s self-reported symptoms.
       Only give the answer to the questions asked. Do not provide any additional information.
       Write it in short and in bullet points.
-      If you dont know the answer or if the context does not provide specific details then dont give any answer.
+      If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """
 ]
@@ -154,8 +153,9 @@ predefined_prompts_summary = [
     - Author (your name): 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
+    
     """,
 
     """### Reason for Referral
@@ -163,7 +163,7 @@ predefined_prompts_summary = [
     - Referral Source (identify the referral source, e.g., self, family, GP, court): 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -173,7 +173,7 @@ predefined_prompts_summary = [
     - Duration and Progression (describe the duration and progression of symptoms): 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -192,7 +192,7 @@ predefined_prompts_summary = [
       - Significant Medical Events: 
       Only give the answer to the questions asked. Do not provide any additional information.
       Write it in short and in bullet points.
-      If you dont know the answer or if the context does not provide specific details then dont give any answer.
+      If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -202,7 +202,7 @@ predefined_prompts_summary = [
     - Allergies and Sensitivities (include drug, food, or other allergies): 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -211,7 +211,7 @@ predefined_prompts_summary = [
     - Past Psychiatric Medications (include name, dosage, dates of dose changes, and side effects): 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -223,7 +223,7 @@ predefined_prompts_summary = [
     - Substance Use Treatment (include history of treatment or recovery efforts): 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -234,7 +234,7 @@ predefined_prompts_summary = [
     - Significant Life Events (e.g., history of abuse, neglect, trauma): 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -245,7 +245,7 @@ predefined_prompts_summary = [
     - Social History (childhood and adolescence):
     Only give the answer to the questions asked. Do not provide any additional information. 
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -256,7 +256,7 @@ predefined_prompts_summary = [
     - Hobbies and Interests: 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -264,7 +264,7 @@ predefined_prompts_summary = [
     - Legal Issues (record any forensic or legal matters): 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -283,7 +283,7 @@ predefined_prompts_summary = [
     - Insight and Judgment: 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -295,7 +295,7 @@ predefined_prompts_summary = [
     - Social Functioning: 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -304,14 +304,14 @@ predefined_prompts_summary = [
     - Key Findings (results and interpretations): 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
     """### Summary
     - Overall Summary and Impression: 
     Only give the answer to the questions asked. Do not provide any additional information.
-    If you dont know the answer or if the context does not provide specific details then dont give any answer.
+    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
@@ -327,7 +327,7 @@ predefined_prompts_summary = [
       - Additional Services (if applicable): 
       Only give the answer to the questions asked. Do not provide any additional information.
       Write it in short and in bullet points.
-      If you dont know the answer or if the context does not provide specific details then dont give any answer.
+      If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """
 ]
