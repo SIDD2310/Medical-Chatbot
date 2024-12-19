@@ -425,24 +425,39 @@ def main():
     st.write(css, unsafe_allow_html=True)
     global MODEL, TEMP, pdf_docs, predefined_prompts_summary, predefined_prompts_conflict
     init_ses_states()
+
+    # Initialize session state for summary and conflict outputs
+    if "summary_output" not in st.session_state:
+        st.session_state["summary_output"] = ""
+    if "conflict_output" not in st.session_state:
+        st.session_state["conflict_output"] = ""
+
     deploy_tab, code_tab = st.tabs(["Note Synthesis", "Ambient AI Note Generation"])
     
     with deploy_tab:
         st.title("Note Synthesis")
         c1, c2 = st.columns(2)
         sidebar()
+        
         with c1:
             st.text_area(label="Prompt template for generating summary", value=predefined_prompts_summary, height=500)
             if pdf_docs and st.button("Generate Summary"):
                 with st.spinner("Processing"):
                     summary = process_docs_and_generate_summary(pdf_docs, TEMP, MODEL)
-                    st.container().markdown(bot_template.replace("{{MSG}}", summary), unsafe_allow_html=True)
+                    st.session_state["summary_output"] = summary  # Save output in session state
+            # Display summary output
+            if st.session_state["summary_output"]:
+                st.container().markdown(bot_template.replace("{{MSG}}", st.session_state["summary_output"]), unsafe_allow_html=True)
+        
         with c2:
             st.text_area(label="Prompt template for generating conflicts", value=predefined_prompts_conflict, height=500)
             if pdf_docs and st.button("Generate Conflict"):
                 with st.spinner("Processing"):
                     conflict = process_docs_and_generate_conflict(pdf_docs, TEMP, MODEL)
-                    st.container().markdown(bot_template.replace("{{MSG}}", conflict), unsafe_allow_html=True)
+                    st.session_state["conflict_output"] = conflict  # Save output in session state
+            # Display conflict output
+            if st.session_state["conflict_output"]:
+                st.container().markdown(bot_template.replace("{{MSG}}", st.session_state["conflict_output"]), unsafe_allow_html=True)
     
     with code_tab:
         from openai import OpenAI
@@ -467,7 +482,7 @@ def main():
 
                 # Display the transcription
                 st.subheader("Transcription")
-                st.text(transcription.text)
+                st.write(transcription.text)
                 
             
 
