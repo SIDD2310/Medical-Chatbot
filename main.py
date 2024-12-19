@@ -7,11 +7,9 @@ import hashlib
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain.llms import OpenAI
 from langchain.vectorstores import Chroma
-# from streamlit_chromadb_connection.chromadb_connection import ChromadbConnection
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-
 from htmlTemplates import css, bot_template, user_template
 from textFunctions import get_pdf_text, get_pdfs_text, get_text_chunks
 
@@ -420,6 +418,30 @@ def sidebar():
         with st.expander("Your Documents", expanded=True):
             pdf_docs = st.file_uploader("Upload your PDFs here", accept_multiple_files=True)
 
+def handle_userinput(user_question, prompt):
+    # Run the chain, now it will only return 'answer'
+    chain_output = st.session_state.conversation({'question': (prompt + user_question)})
+    answer = chain_output['answer']
+    
+    # Retrieve documents separately
+    source_docs = st.session_state.conversation.retriever.get_relevant_documents(user_question)
+
+    st.session_state.chat_history = chain_output['chat_history']
+    with st.spinner('Generating response...'):
+        st.markdown(bot_template.replace("{{MSG}}", answer), unsafe_allow_html=True)
+
+def process_docs(pdf_docs, TEMP, MODEL):
+    st.session_state["conversation"] = None
+    st.session_state["chat_history"] = None
+    st.session_state["user_question"] = ""
+    doc_hash = hash_documents(pdf_docs)
+    raw_text = get_pdfs_text(pdf_docs)
+    text_chunks = get_text_chunks(raw_text)
+    vectorstore = get_vectorstore(text_chunks, doc_hash)
+
+    st.session_state.conversation = get_conversation_chain(vectorstore, temp=TEMP, model=MODEL)
+    st.session_state.pdf_processed = True
+
 def main():
     st.set_page_config(page_title="Multi-Document Chat Bot", page_icon=":books:", layout="wide")
     st.write(css, unsafe_allow_html=True)
@@ -432,7 +454,7 @@ def main():
     if "conflict_output" not in st.session_state:
         st.session_state["conflict_output"] = ""
 
-    deploy_tab, code_tab = st.tabs(["Note Synthesis", "Ambient AI Note Generation"])
+    deploy_tab, code_tab, test = st.tabs(["Note Synthesis", "Ambient AI Note Generation", "Testing"])
     
     with deploy_tab:
         st.title("Note Synthesis")
@@ -506,6 +528,27 @@ def main():
                 st.error(f"An error occurred: {e}")
         else:
             st.write("Please upload an MP3 file to begin.")
+            
+    with test:
+        st.title("Testing")
+        if not pdf_docs:
+            st.caption("Please Upload At Least 1 PDF")
+            st.session_state.pdf_processed = False
+        if st.sidebar.button("Process Files + New Chat"):
+            if pdf_docs:
+                with st.spinner("Processing"):
+                    process_docs(pdf_docs, TEMP, MODEL)
+            else: 
+                st.caption("Please Upload At Least 1 PDF")
+                st.session_state.pdf_processed = False
+        PROMPT_TEMPLATE = "You are a helpful assistant"
+        if st.session_state.get("pdf_processed") and st.session_state.api_authenticated:
+            prompt = PROMPT_TEMPLATE
+            with st.form("user_input_form"):
+                user_question = st.text_input("Ask a question about your documents:")
+                send_button = st.form_submit_button("Send")
+            if send_button and user_question:
+                handle_userinput(user_question, prompt)
 
 if __name__ == '__main__':
     main()
