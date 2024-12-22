@@ -482,8 +482,11 @@ def main():
                 st.container().markdown(bot_template.replace("{{MSG}}", st.session_state["conflict_output"]), unsafe_allow_html=True)
     
     with code_tab:
-        from openai import OpenAI
-        client = OpenAI()
+        import whisper
+        from pydub import AudioSegment
+        import tempfile
+        import os
+        import time
 
         # Set up the Streamlit interface
         st.title("Ambient AI Note Generation")
@@ -494,32 +497,64 @@ def main():
         if uploaded_file1 is not None:
             try:
                 # Display a message to the user
+                st.info("Processing your audio file, please wait...")
+
+                # Save the uploaded file to a temporary location
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
+                    temp_file.write(uploaded_file1.read())
+                    temp_file_path = temp_file.name
+
+                # Get the initial file size
+                initial_file_size = os.path.getsize(temp_file_path) / (1024 * 1024)
+
+                # Load the audio file using pydub
+                audio = AudioSegment.from_file(temp_file_path, format="mp3")
+
+                # Compress the audio file to the maximum extent possible
+                compressed_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3").name
+                audio.export(compressed_file_path, format="mp3", bitrate="32k")
+
+                # Get the final file size
+                final_file_size = os.path.getsize(compressed_file_path) / (1024 * 1024)
+
+                # Display file sizes
+                st.write(f"Initial file size: {initial_file_size:.2f} MB")
+                st.write(f"Compressed file size: {final_file_size:.2f} MB")
+
+                # Display a message indicating transcription is starting
                 st.info("Transcribing your audio file, please wait...")
 
-                # Perform transcription using Whisper API
-                transcription = client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=uploaded_file1
-                )
+                # Perform transcription using the whisper model
+                model = whisper.load_model("tiny")
+
+                start_time = time.time()
+                result = model.transcribe(compressed_file_path)
+                transcription_time = time.time() - start_time
 
                 # Display the transcription
                 st.subheader("Transcription")
-                st.write(transcription.text)
-                
-            
+                st.write(result["text"])
+
+                # Display transcription time
+                st.write(f"Time taken to transcribe: {transcription_time:.2f} seconds")
+
+                # Generate a summary using GPT model
+                from openai import OpenAI
+
+                client = OpenAI()
 
                 chat_completion = client.chat.completions.create(
                     messages=[
                         {
                             "role": "user",
-                            "content": f"Summarize the following text: \n\n{transcription.text}",
+                            "content": f"Summarize the following text: \n\n{result['text']}",
                         }
                     ],
                     model="gpt-4o-mini"
                 )
 
-                summary =  chat_completion.choices[0].message.content
-                
+                summary = chat_completion.choices[0].message.content
+
                 st.subheader("Summary")
                 st.write(summary)
 
@@ -528,6 +563,7 @@ def main():
                 st.error(f"An error occurred: {e}")
         else:
             st.write("Please upload an MP3 file to begin.")
+
             
     with test:
         st.title("Testing")
