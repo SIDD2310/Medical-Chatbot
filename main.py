@@ -488,7 +488,6 @@ def main():
         import os
         import time
         import subprocess
-        import ffmpeg
 
         # Set up the Streamlit interface
         st.title("Ambient AI Note Generation")
