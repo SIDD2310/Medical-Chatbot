@@ -14,3 +14,4 @@ streamlit-chromadb-connection
 pysqlite3-binary
 openai-whisper
 pydub
+ffmpeg-python
