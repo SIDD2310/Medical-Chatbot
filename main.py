@@ -484,10 +484,10 @@ def main():
     
     with code_tab:
         import whisper
-        from pydub import AudioSegment
         import tempfile
         import os
         import time
+        import subprocess
 
         # Set up the Streamlit interface
         st.title("Ambient AI Note Generation")
@@ -508,12 +508,16 @@ def main():
                 # Get the initial file size
                 initial_file_size = os.path.getsize(temp_file_path) / (1024 * 1024)
 
-                # Load the audio file using pydub
-                audio = AudioSegment.from_file(temp_file_path, format="mp3")
-
-                # Compress the audio file to the maximum extent possible
+                # Compress the audio file using FFmpeg
                 compressed_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3").name
-                audio.export(compressed_file_path, format="mp3", bitrate="32k")
+                ffmpeg_command = [
+                    "ffmpeg",
+                    "-i", temp_file_path,
+                    "-b:a", "32k",  # Set the bitrate to 32 kbps for maximum compression
+                    "-y",  # Overwrite output file if it exists
+                    compressed_file_path
+                ]
+                subprocess.run(ffmpeg_command, check=True)
 
                 # Get the final file size
                 final_file_size = os.path.getsize(compressed_file_path) / (1024 * 1024)
@@ -564,6 +568,7 @@ def main():
                 st.error(f"An error occurred: {e}")
         else:
             st.write("Please upload an MP3 file to begin.")
+
 
             
     with test:
