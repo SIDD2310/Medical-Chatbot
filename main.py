@@ -1,7 +1,7 @@
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-sys.path.append('/usr/bin/ffmpeg')
+# __import__('pysqlite3')
+# import sys
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+# sys.path.append('/usr/bin/ffmpeg')
 import streamlit as st
 import os
 import hashlib
@@ -491,83 +491,131 @@ def main():
 
         # Set up the Streamlit interface
         st.title("Ambient AI Note Generation")
+        
+        # Add a sidebar for user options
+        st.header("Input Options")
+        input_option = st.radio("Choose an input option:", ("Upload Audio File", "Upload Transcription"))
 
-        # Allow the user to upload an MP3 file
-        uploaded_file1 = st.file_uploader("Upload an MP3 file", type=["mp3"])
+        if input_option == "Upload Audio File":
+            # Allow the user to upload an MP3 file
+            uploaded_file1 = st.file_uploader("Upload an MP3 file", type=["mp3"])
 
-        if uploaded_file1 is not None:
-            try:
-                # Display a message to the user
-                st.info("Processing your audio file, please wait...")
+            if uploaded_file1 is not None:
+                try:
+                    # Display a message to the user
+                    st.info("Processing your audio file, please wait...")
 
-                # Save the uploaded file to a temporary location
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
-                    temp_file.write(uploaded_file1.read())
-                    temp_file_path = temp_file.name
+                    # Save the uploaded file to a temporary location
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
+                        temp_file.write(uploaded_file1.read())
+                        temp_file_path = temp_file.name
 
-                # Get the initial file size
-                initial_file_size = os.path.getsize(temp_file_path) / (1024 * 1024)
+                    # Get the initial file size
+                    initial_file_size = os.path.getsize(temp_file_path) / (1024 * 1024)
 
-                # Compress the audio file using FFmpeg
-                compressed_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3").name
-                ffmpeg_command = [
-                    "ffmpeg",
-                    "-i", temp_file_path,
-                    "-b:a", "32k",  # Set the bitrate to 32 kbps for maximum compression
-                    "-y",  # Overwrite output file if it exists
-                    compressed_file_path
-                ]
-                subprocess.run(ffmpeg_command, check=True)
+                    # Compress the audio file using FFmpeg
+                    compressed_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3").name
+                    ffmpeg_command = [
+                        "ffmpeg",
+                        "-i", temp_file_path,
+                        "-b:a", "32k",  # Set the bitrate to 32 kbps for maximum compression
+                        "-y",  # Overwrite output file if it exists
+                        compressed_file_path
+                    ]
+                    subprocess.run(ffmpeg_command, check=True)
 
-                # Get the final file size
-                final_file_size = os.path.getsize(compressed_file_path) / (1024 * 1024)
+                    # Get the final file size
+                    final_file_size = os.path.getsize(compressed_file_path) / (1024 * 1024)
 
-                # Display file sizes
-                st.write(f"Initial file size: {initial_file_size:.2f} MB")
-                st.write(f"Compressed file size: {final_file_size:.2f} MB")
+                    # Display file sizes
+                    st.write(f"Initial file size: {initial_file_size:.2f} MB")
+                    st.write(f"Compressed file size: {final_file_size:.2f} MB")
 
-                # Display a message indicating transcription is starting
-                st.info("Transcribing your audio file, please wait...")
+                    # Display a message indicating transcription is starting
+                    st.info("Transcribing your audio file, please wait...")
 
-                # Perform transcription using the whisper model
-                model = whisper.load_model("tiny")
+                    # Perform transcription using the whisper model
+                    model = whisper.load_model("tiny")
 
-                start_time = time.time()
-                result = model.transcribe(compressed_file_path)
-                transcription_time = time.time() - start_time
+                    start_time = time.time()
+                    result = model.transcribe(compressed_file_path)
+                    transcription_time = time.time() - start_time
 
-                # Display the transcription
-                st.subheader("Transcription")
-                st.write(result["text"])
+                    # Display the transcription
+                    st.subheader("Transcription")
+                    st.write(result["text"])
 
-                # Display transcription time
-                st.write(f"Time taken to transcribe: {transcription_time:.2f} seconds")
+                    # Display transcription time
+                    st.write(f"Time taken to transcribe: {transcription_time:.2f} seconds")
 
-                # Generate a summary using GPT model
-                from openai import OpenAI
+                    # Generate a summary using GPT model
+                    from openai import OpenAI
 
-                client = OpenAI()
+                    client = OpenAI()
 
-                chat_completion = client.chat.completions.create(
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": f"Summarize the following text: \n\n{result['text']}",
-                        }
-                    ],
-                    model="gpt-4o-mini"
-                )
+                    chat_completion = client.chat.completions.create(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": f"Summarize the following text: \n\n{result['text']}",
+                            }
+                        ],
+                        model="gpt-4o-mini"
+                    )
 
-                summary = chat_completion.choices[0].message.content
+                    summary = chat_completion.choices[0].message.content
 
-                st.subheader("Summary")
-                st.write(summary)
+                    st.subheader("Summary")
+                    st.write(summary)
 
-            except Exception as e:
-                # Handle any errors that occur
-                st.error(f"An error occurred: {e}")
-        else:
-            st.write("Please upload an MP3 file to begin.")
+                except Exception as e:
+                    # Handle any errors that occur
+                    st.error(f"An error occurred: {e}")
+            else:
+                st.write("Please upload an MP3 file to begin.")
+
+        elif input_option == "Upload Transcription":
+            # Allow the user to upload or paste a transcription
+            transcription_input = st.text_area("Paste your transcription here:", "")
+
+            prompt_template = """Summarize the following text:
+{text}
+                    """
+            st.text_area(label="Modify the prompt here" ,value=prompt_template)
+            
+            if transcription_input:
+                try:
+                    # Display the transcription
+                    st.subheader("Transcription")
+                    st.write(transcription_input)
+                    
+
+                    # Generate a summary using GPT model
+                    from openai import OpenAI
+
+                    client = OpenAI()
+
+                    chat_completion = client.chat.completions.create(
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": f"Summarize the following text: \n\n{transcription_input}",
+                            }
+                        ],
+                        model="gpt-4o-mini"
+                    )
+
+                    summary = chat_completion.choices[0].message.content
+
+                    st.subheader("Summary")
+                    st.write(summary)
+
+                except Exception as e:
+                    # Handle any errors that occur
+                    st.error(f"An error occurred: {e}")
+            else:
+                st.write("Please paste a transcription to begin.")
+
 
 
             
