@@ -1,7 +1,7 @@
-# __import__('pysqlite3')
-# import sys
-# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-# sys.path.append('/usr/bin/ffmpeg')
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+sys.path.append('/usr/bin/ffmpeg')
 import streamlit as st
 import os
 import hashlib
@@ -587,7 +587,7 @@ def main():
                 try:
                     # Display the transcription
                     st.subheader("Transcription")
-                    st.write(transcription_input)
+                    st.markdown(transcription_input)
                     
 
                     # Generate a summary using GPT model
@@ -608,7 +608,7 @@ def main():
                     summary = chat_completion.choices[0].message.content
 
                     st.subheader("Summary")
-                    st.write(summary)
+                    st.markdown(summary)
 
                 except Exception as e:
                     # Handle any errors that occur
