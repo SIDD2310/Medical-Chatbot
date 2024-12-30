@@ -16,3 +16,7 @@ openai-whisper
 pydub
 ffmpeg-python
 ffprobe
+whisper
+scikit-learn
+pyannote.audio
+numpy

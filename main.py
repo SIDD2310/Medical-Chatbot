@@ -483,13 +483,76 @@ def main():
                 st.container().markdown(bot_template.replace("{{MSG}}", st.session_state["conflict_output"]), unsafe_allow_html=True)
     
     with code_tab:
-        import whisper
         import tempfile
-        import os
-        import time
+        import whisper
+        import datetime
         import subprocess
+        import wave
+        import contextlib
+        import numpy as np
+        from sklearn.cluster import AgglomerativeClustering
+        from pyannote.audio.pipelines.speaker_verification import PretrainedSpeakerEmbedding
+        from pyannote.audio import Audio
+        from pyannote.core import Segment
+        embedding_model = PretrainedSpeakerEmbedding("speechbrain/spkrec-ecapa-voxceleb")
+        audio_processor = Audio()
 
-        # Set up the Streamlit interface
+        # Helper function to convert seconds to time
+        def time(secs):
+            return str(datetime.timedelta(seconds=round(secs)))
+
+        def process_audio(path, num_speakers, model_size):
+            # Convert to WAV if necessary and ensure mono audio
+            if path[-3:] != 'wav':
+                subprocess.call(['ffmpeg', '-i', path, '-ac', '1', 'audio.wav', '-y'])
+                path = 'audio.wav'
+            else:
+                # Ensure mono conversion for WAV files
+                subprocess.call(['ffmpeg', '-i', path, '-ac', '1', 'audio_mono.wav', '-y'])
+                path = 'audio_mono.wav'
+
+            # Load Whisper model
+            model = whisper.load_model(model_size)
+
+            # Transcribe audio
+            result = model.transcribe(path)
+            segments = result["segments"]
+
+            # Get duration of audio
+            with contextlib.closing(wave.open(path, 'r')) as f:
+                frames = f.getnframes()
+                rate = f.getframerate()
+                duration = frames / float(rate)
+
+            # Extract embeddings for each segment
+            def segment_embedding(segment):
+                start = segment["start"]
+                end = min(duration, segment["end"])
+                clip = Segment(start, end)
+                waveform, _ = audio_processor.crop(path, clip)
+                return embedding_model(waveform[None])
+
+            embeddings = np.zeros((len(segments), 192))
+            for i, segment in enumerate(segments):
+                embeddings[i] = segment_embedding(segment)
+
+            embeddings = np.nan_to_num(embeddings)
+
+            # Cluster embeddings into speakers
+            clustering = AgglomerativeClustering(num_speakers).fit(embeddings)
+            labels = clustering.labels_
+            for i in range(len(segments)):
+                segments[i]["speaker"] = f'SPEAKER {labels[i] + 1}'
+
+            # Generate transcript with speaker labels
+            transcript = ""
+            for i, segment in enumerate(segments):
+                if i == 0 or segments[i - 1]["speaker"] != segment["speaker"]:
+                    transcript += f"\n{segment['speaker']} {time(segment['start'])}\n"
+                transcript += segment["text"].strip() + " "
+
+            return transcript
+
         st.title("Ambient AI Note Generation")
         
         # Add a sidebar for user options
@@ -498,88 +561,125 @@ def main():
 
         if input_option == "Upload Audio File":
             # Allow the user to upload an MP3 file
-            uploaded_file1 = st.file_uploader("Upload an MP3 file", type=["mp3"])
+            uploaded_file = st.file_uploader("Upload an audio file", type=["wav", "mp3", "m4a"])
+            num_speakers = st.number_input("Number of Speakers", min_value=1, max_value=10, value=2, step=1)
+            model_size = st.selectbox("Model Size", options=["tiny", "base", "small", "medium", "large"])
 
-            if uploaded_file1 is not None:
-                try:
-                    # Display a message to the user
-                    st.info("Processing your audio file, please wait...")
+            if uploaded_file is not None:
+                with open("temp_audio", "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                
+                with st.spinner("Processing audio..."):
+                    transcript = process_audio("temp_audio", num_speakers, model_size)
 
-                    # Save the uploaded file to a temporary location
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
-                        temp_file.write(uploaded_file1.read())
-                        temp_file_path = temp_file.name
-
-                    # Get the initial file size
-                    initial_file_size = os.path.getsize(temp_file_path) / (1024 * 1024)
-
-                    # Compress the audio file using FFmpeg
-                    compressed_file_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3").name
-                    ffmpeg_command = [
-                        "ffmpeg",
-                        "-i", temp_file_path,
-                        "-b:a", "32k",  # Set the bitrate to 32 kbps for maximum compression
-                        "-y",  # Overwrite output file if it exists
-                        compressed_file_path
-                    ]
-                    subprocess.run(ffmpeg_command, check=True)
-
-                    # Get the final file size
-                    final_file_size = os.path.getsize(compressed_file_path) / (1024 * 1024)
-
-                    # Display file sizes
-                    st.write(f"Initial file size: {initial_file_size:.2f} MB")
-                    st.write(f"Compressed file size: {final_file_size:.2f} MB")
-
-                    # Display a message indicating transcription is starting
-                    st.info("Transcribing your audio file, please wait...")
-
-                    # Perform transcription using the whisper model
-                    model = whisper.load_model("tiny")
-
-                    start_time = time.time()
-                    result = model.transcribe(compressed_file_path)
-                    transcription_time = time.time() - start_time
-
-                    # Display the transcription
-                    st.subheader("Transcription")
-                    st.write(result["text"])
-
-                    # Display transcription time
-                    st.write(f"Time taken to transcribe: {transcription_time:.2f} seconds")
-
+                st.success("Processing complete!")
+                st.text_area("Transcript", transcript, height=400)
                     # Generate a summary using GPT model
-                    from openai import OpenAI
+                from openai import OpenAI
 
-                    client = OpenAI()
+                client = OpenAI()
 
-                    chat_completion = client.chat.completions.create(
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": f"Summarize the following text: \n\n{result['text']}",
-                            }
-                        ],
-                        model="gpt-4o-mini"
-                    )
+                chat_completion = client.chat.completions.create(
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": f"Give a detailed summary of the following transcript. Breifly mention the important points and dont miss any detail: \n\n{transcript}",
+                        }
+                    ],
+                    model="gpt-4o-mini"
+                )
 
-                    summary = chat_completion.choices[0].message.content
+                summary = chat_completion.choices[0].message.content
 
-                    st.subheader("Summary")
-                    st.write(summary)
+                st.subheader("Summary")
+                st.write(summary)
 
-                except Exception as e:
-                    # Handle any errors that occur
-                    st.error(f"An error occurred: {e}")
-            else:
-                st.write("Please upload an MP3 file to begin.")
+    
 
         elif input_option == "Upload Transcription":
             # Allow the user to upload or paste a transcription
             transcription_input = st.text_area("Paste your transcription here:", "")
 
-            prompt_template = """Summarize the following text:
-{text}
+            prompt_template = """Extract the following information from the transcription. Answer in extreme detail and do not miss any detail.: 
+Psychotherapy Progress Note
+Guidelines for Use:
+ Use placeholders only if explicitly mentioned in the transcript or contextual notes;
+leave blank if not applicable.
+ Do not hallucinate or fabricate details; rely solely on provided data.
+ Capture all relevant topics discussed in the transcript, as even minor discussions may
+hold significance.
+ Modify the structure as needed to include additional sections or exclude irrelevant
+ones based on the transcript&#39;s content.
+ Strictly Evidence-Based Plan: Recommendations in the Plan section must be based
+on content directly discussed during the session.
+ Synthesise information if needed (e.g., connecting medication mentions with dosage
+discussed later), but do not infer or fabricate any plans that were not explicitly stated.
+ Highlight key patient quotes in quotation marks to document concerns or provide
+evidence for clinical impressions.
+
+Current Presentation
+ Reason for Visit: [Primary reason for therapy this session; duration and description
+of presenting issues.]
+ Impact on Functioning: [How the issue affects daily life, work, school, or activities.]
+
+Session Details
+ Date/Time: [Include session date and duration.]
+ Type of Session: [Individual, couples, family therapy, etc.]
+ Modality: [CBT, psychodynamic, person-centered, etc.]
+
+Presenting Issues
+ Primary Concerns: [Describe the primary reason for therapy in the patient’s own
+words if possible.]
+ Session Focus: [Key topic(s) addressed during the session.]
+
+Therapeutic Content
+
+ Themes Discussed:
+o [Specific life events, thoughts, emotions, or interpersonal dynamics
+discussed.]
+ Exploration:
+o [How the patient explored their thoughts, feelings, or behaviors related to the
+session themes.]
+ Link to Past Sessions:
+o [Connections made to previous discussions or progress.]
+
+Patient’s Emotional Experience
+ Emotional Expression: [Describe the patient’s emotional state during the session.]
+ Emotional Shifts: [Any notable changes in emotional state throughout the session.]
+
+Therapeutic Techniques and Interventions
+ [List specific techniques used, e.g., cognitive restructuring, grounding exercises,
+mindfulness, etc.]
+ [Note patient’s response to these interventions.]
+
+Insights and Progress
+ Patient’s Insights:
+o [Any realizations or shifts in perspective noted by the patient.]
+ Progress Toward Goals:
+o [Evidence of movement toward therapy goals.]
+
+Obstacles and Challenges
+ Resistance or Barriers: [Describe any defenses, avoidance, or challenges
+encountered.]
+ Support Strategies: [Techniques used to address obstacles.]
+
+Transference/Countertransference
+ Transference: [Patient’s projections or feelings toward the therapist.]
+ Countertransference: [Therapist’s emotional reactions to the patient.]
+
+Risk Assessment
+ Suicidal Ideation: [Details if present, including plans or protective factors.]
+ Self-Harm: [Details of any behaviors or thoughts.]
+ Other Risks: [Substance use, impulsivity, aggression, etc.]
+
+Session Summary
+ [Summarize the session in 3–5 sentences, highlighting key themes, patient’s progress,
+and areas needing further attention.]
+
+Plan for Next Steps
+ Next Session Goals: [What will be the focus for the next session?]
+ Homework or Practice: [Any assignments given to the patient.]
+ Therapist’s Notes: [Reflections or planning notes for future sessions.]
                     """
             st.text_area(label="Modify the prompt here" ,value=prompt_template)
             
@@ -599,7 +699,7 @@ def main():
                         messages=[
                             {
                                 "role": "user",
-                                "content": f"Summarize the following text: \n\n{transcription_input}",
+                                "content": f"{prompt_template} \n\n{transcription_input}",
                             }
                         ],
                         model="gpt-4o-mini"
