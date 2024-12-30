@@ -496,7 +496,87 @@ def main():
         from pyannote.core import Segment
         embedding_model = PretrainedSpeakerEmbedding("speechbrain/spkrec-ecapa-voxceleb")
         audio_processor = Audio()
+        prompt_template = """Extract the following information from the transcription. Answer in extreme detail and do not miss any detail.: 
+Psychotherapy Progress Note
+Guidelines for Use:
+ Use placeholders only if explicitly mentioned in the transcript or contextual notes;
+leave blank if not applicable.
+ Do not hallucinate or fabricate details; rely solely on provided data.
+ Capture all relevant topics discussed in the transcript, as even minor discussions may
+hold significance.
+ Modify the structure as needed to include additional sections or exclude irrelevant
+ones based on the transcript&#39;s content.
+ Strictly Evidence-Based Plan: Recommendations in the Plan section must be based
+on content directly discussed during the session.
+ Synthesise information if needed (e.g., connecting medication mentions with dosage
+discussed later), but do not infer or fabricate any plans that were not explicitly stated.
+ Highlight key patient quotes in quotation marks to document concerns or provide
+evidence for clinical impressions.
 
+Current Presentation
+ Reason for Visit: [Primary reason for therapy this session; duration and description
+of presenting issues.]
+ Impact on Functioning: [How the issue affects daily life, work, school, or activities.]
+
+Session Details
+ Date/Time: [Include session date and duration.]
+ Type of Session: [Individual, couples, family therapy, etc.]
+ Modality: [CBT, psychodynamic, person-centered, etc.]
+
+Presenting Issues
+ Primary Concerns: [Describe the primary reason for therapy in the patient’s own
+words if possible.]
+ Session Focus: [Key topic(s) addressed during the session.]
+
+Therapeutic Content
+
+ Themes Discussed:
+o [Specific life events, thoughts, emotions, or interpersonal dynamics
+discussed.]
+ Exploration:
+o [How the patient explored their thoughts, feelings, or behaviors related to the
+session themes.]
+ Link to Past Sessions:
+o [Connections made to previous discussions or progress.]
+
+Patient’s Emotional Experience
+ Emotional Expression: [Describe the patient’s emotional state during the session.]
+ Emotional Shifts: [Any notable changes in emotional state throughout the session.]
+
+Therapeutic Techniques and Interventions
+ [List specific techniques used, e.g., cognitive restructuring, grounding exercises,
+mindfulness, etc.]
+ [Note patient’s response to these interventions.]
+
+Insights and Progress
+ Patient’s Insights:
+o [Any realizations or shifts in perspective noted by the patient.]
+ Progress Toward Goals:
+o [Evidence of movement toward therapy goals.]
+
+Obstacles and Challenges
+ Resistance or Barriers: [Describe any defenses, avoidance, or challenges
+encountered.]
+ Support Strategies: [Techniques used to address obstacles.]
+
+Transference/Countertransference
+ Transference: [Patient’s projections or feelings toward the therapist.]
+ Countertransference: [Therapist’s emotional reactions to the patient.]
+
+Risk Assessment
+ Suicidal Ideation: [Details if present, including plans or protective factors.]
+ Self-Harm: [Details of any behaviors or thoughts.]
+ Other Risks: [Substance use, impulsivity, aggression, etc.]
+
+Session Summary
+ [Summarize the session in 3–5 sentences, highlighting key themes, patient’s progress,
+and areas needing further attention.]
+
+Plan for Next Steps
+ Next Session Goals: [What will be the focus for the next session?]
+ Homework or Practice: [Any assignments given to the patient.]
+ Therapist’s Notes: [Reflections or planning notes for future sessions.]
+                    """
         # Helper function to convert seconds to time
         def time(secs):
             return str(datetime.timedelta(seconds=round(secs)))
@@ -583,7 +663,7 @@ def main():
                     messages=[
                         {
                             "role": "user",
-                            "content": f"Give a detailed summary of the following transcript. Breifly mention the important points and dont miss any detail: \n\n{transcript}",
+                            "content": f"{prompt_template} \n\n{transcript}",
                         }
                     ],
                     model="gpt-4o-mini"
@@ -600,87 +680,7 @@ def main():
             # Allow the user to upload or paste a transcription
             transcription_input = st.text_area("Paste your transcription here:", "")
 
-            prompt_template = """Extract the following information from the transcription. Answer in extreme detail and do not miss any detail.: 
-Psychotherapy Progress Note
-Guidelines for Use:
- Use placeholders only if explicitly mentioned in the transcript or contextual notes;
-leave blank if not applicable.
- Do not hallucinate or fabricate details; rely solely on provided data.
- Capture all relevant topics discussed in the transcript, as even minor discussions may
-hold significance.
- Modify the structure as needed to include additional sections or exclude irrelevant
-ones based on the transcript&#39;s content.
- Strictly Evidence-Based Plan: Recommendations in the Plan section must be based
-on content directly discussed during the session.
- Synthesise information if needed (e.g., connecting medication mentions with dosage
-discussed later), but do not infer or fabricate any plans that were not explicitly stated.
- Highlight key patient quotes in quotation marks to document concerns or provide
-evidence for clinical impressions.
-
-Current Presentation
- Reason for Visit: [Primary reason for therapy this session; duration and description
-of presenting issues.]
- Impact on Functioning: [How the issue affects daily life, work, school, or activities.]
-
-Session Details
- Date/Time: [Include session date and duration.]
- Type of Session: [Individual, couples, family therapy, etc.]
- Modality: [CBT, psychodynamic, person-centered, etc.]
-
-Presenting Issues
- Primary Concerns: [Describe the primary reason for therapy in the patient’s own
-words if possible.]
- Session Focus: [Key topic(s) addressed during the session.]
-
-Therapeutic Content
-
- Themes Discussed:
-o [Specific life events, thoughts, emotions, or interpersonal dynamics
-discussed.]
- Exploration:
-o [How the patient explored their thoughts, feelings, or behaviors related to the
-session themes.]
- Link to Past Sessions:
-o [Connections made to previous discussions or progress.]
-
-Patient’s Emotional Experience
- Emotional Expression: [Describe the patient’s emotional state during the session.]
- Emotional Shifts: [Any notable changes in emotional state throughout the session.]
-
-Therapeutic Techniques and Interventions
- [List specific techniques used, e.g., cognitive restructuring, grounding exercises,
-mindfulness, etc.]
- [Note patient’s response to these interventions.]
-
-Insights and Progress
- Patient’s Insights:
-o [Any realizations or shifts in perspective noted by the patient.]
- Progress Toward Goals:
-o [Evidence of movement toward therapy goals.]
-
-Obstacles and Challenges
- Resistance or Barriers: [Describe any defenses, avoidance, or challenges
-encountered.]
- Support Strategies: [Techniques used to address obstacles.]
-
-Transference/Countertransference
- Transference: [Patient’s projections or feelings toward the therapist.]
- Countertransference: [Therapist’s emotional reactions to the patient.]
-
-Risk Assessment
- Suicidal Ideation: [Details if present, including plans or protective factors.]
- Self-Harm: [Details of any behaviors or thoughts.]
- Other Risks: [Substance use, impulsivity, aggression, etc.]
-
-Session Summary
- [Summarize the session in 3–5 sentences, highlighting key themes, patient’s progress,
-and areas needing further attention.]
-
-Plan for Next Steps
- Next Session Goals: [What will be the focus for the next session?]
- Homework or Practice: [Any assignments given to the patient.]
- Therapist’s Notes: [Reflections or planning notes for future sessions.]
-                    """
+            
             st.text_area(label="Modify the prompt here" ,value=prompt_template)
             
             if transcription_input:
