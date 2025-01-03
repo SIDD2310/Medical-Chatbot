@@ -496,86 +496,102 @@ def main():
         from pyannote.core import Segment
         embedding_model = PretrainedSpeakerEmbedding("speechbrain/spkrec-ecapa-voxceleb")
         audio_processor = Audio()
-        prompt_template = """Extract the following information from the transcription. Answer in extreme detail and do not miss any detail.: 
-Psychotherapy Progress Note
-Guidelines for Use:
- Use placeholders only if explicitly mentioned in the transcript or contextual notes;
-leave blank if not applicable.
- Do not hallucinate or fabricate details; rely solely on provided data.
- Capture all relevant topics discussed in the transcript, as even minor discussions may
-hold significance.
- Modify the structure as needed to include additional sections or exclude irrelevant
-ones based on the transcript&#39;s content.
- Strictly Evidence-Based Plan: Recommendations in the Plan section must be based
-on content directly discussed during the session.
- Synthesise information if needed (e.g., connecting medication mentions with dosage
-discussed later), but do not infer or fabricate any plans that were not explicitly stated.
- Highlight key patient quotes in quotation marks to document concerns or provide
-evidence for clinical impressions.
+        prompt_template = """Generate a professional therapy progress note based on the following session transcript. The
+note must strictly adhere to the outlined structure below and include only information
+explicitly discussed in the session. Summarize disparate ideas within each heading into
+cohesive paragraphs wherever possible but use bullet points sparingly for clarity when
+necessary. Do not add interpretations, assumptions, or any extra material beyond what is
+stated in the session. Write in a concise, professional tone suitable for an electronic medical
+record (EMR).
+Structure:
+1. Presenting Problem:
+o A brief summary of the client&#39;s main concerns or reasons for the session.
+Include any relevant quotes from the client that capture the presenting issue.
 
-Current Presentation
- Reason for Visit: [Primary reason for therapy this session; duration and description
-of presenting issues.]
- Impact on Functioning: [How the issue affects daily life, work, school, or activities.]
+2. Client History:
+o Summarize any background details provided by the client that give context to
+the presenting problem.
+o Address contributing factors, but minimize bullet points unless they clarify
+distinct issues.
+3. Key Issues Discussed:
+o Detail the specific problems or challenges discussed during the session.
+Include client quotes where appropriate to highlight key themes or
+expressions.
 
-Session Details
- Date/Time: [Include session date and duration.]
- Type of Session: [Individual, couples, family therapy, etc.]
- Modality: [CBT, psychodynamic, person-centered, etc.]
+4. Cognitive Themes Identified:
+o Summarize thought patterns or recurring themes that emerged in the session.
+o Use client quotes selectively to illustrate significant insights or challenges.
+5. Therapeutic Focus:
+o Describe the strategies, techniques, or frameworks introduced or explored
+during the session.
+o Combine ideas into paragraphs but note multiple approaches clearly.
+6. Interventions:
+o Detail the specific interventions or techniques applied in the session.
+o Use bullet points only for distinct actions or steps taken.
+7. Homework Assigned:
+o Clearly outline any tasks, exercises, or self-reflection activities assigned to the
+client.
+8. Plan:
+o Outline the therapeutic goals for the next session or ongoing treatment.
 
-Presenting Issues
- Primary Concerns: [Describe the primary reason for therapy in the patient’s own
-words if possible.]
- Session Focus: [Key topic(s) addressed during the session.]
+Example Output:
+[Presenting Problem:
+The client presented with persistent feelings of sadness, lack of motivation, and a sense of
+being &quot;stuck&quot; in their daily life. They described dissatisfaction with previously fulfilling
+tasks, stating, &quot;I just feel really stuck and not happy.&quot;
+Client History:
+The client is a stay-at-home parent of two children, aged 8 and 10, and has been in this role
+for 10 years. They historically found meaning and fulfillment in household and childcare
+responsibilities. However, over the past six months, they reported a significant decline in
+motivation and purpose, coinciding with their youngest child starting school.
 
-Therapeutic Content
+Additional contributing factors include:
+ Increased time alone and reduced social interactions, noting that former neighborhood
+friendships have &quot;fizzled out.&quot;
+ A reduced sense of accomplishment and reliance on their spouse to manage tasks they
+previously handled independently.
+Key Issues Discussed:
+The client struggles with routine, often finding it difficult to get out of bed due to feelings of
+pointlessness and emotional avoidance. Staying in bed provides temporary relief but leads to
+guilt and frustration. They stated, &quot;I feel frustrated with myself because I know what might
+help, but I just don’t feel motivated to do it.&quot;
+They acknowledged perceived criticism from family members as a significant stressor. For
+example, their mother pointed out they are &quot;not doing as much,&quot; which they found hurtful but
+true. Similarly, the client’s husband has expressed frustration with the additional
+responsibilities he has assumed.
+Cognitive Themes Identified:
+ Maladaptive thoughts, such as &quot;What’s the point?&quot; and &quot;It won’t help anyway.&quot;
+ Recognition of a negative cycle of avoidance, where efforts to delay emotional pain
+lead to increased guilt and dissatisfaction. The client reflected, &quot;I know I’m delaying
+the pain, but it’s just so hard to break out of it.&quot;
+Therapeutic Focus:
+Cognitive behavioral strategies were introduced to address unhelpful thought patterns. I
+emphasized the principle that behavioral activation—taking action even without immediate
+emotional reward—can help initiate positive change. Household tasks were reframed as
+opportunities for potential satisfaction, even if immediate rewards are absent.
+The client was encouraged to focus on small, manageable goals to build momentum. They
+agreed, &quot;If I don’t do anything, I’m not going to feel any better.&quot; Mindfulness techniques were
+introduced to help the client stay present during daily tasks and avoid rumination.
+Interventions:
+ Developed adaptive self-talk strategies, including &quot;I can do this&quot; and &quot;I’m strong
+enough to push through.&quot;
+ Suggested starting each day with one functional task, such as waking up on time and
+preparing for the day.
+ Highlighted the importance of recognizing progress without judgment and reinforcing
+that &quot;The probability of feeling better is higher if you try than if you don’t.&quot;
+Homework Assigned:
+The client was tasked with practicing adaptive self-talk upon waking and attempting to wake
+up on time and follow their morning routine during the next school week. They were
+encouraged to approach progress with self-compassion, recognizing that setbacks do not
+negate their overall progress.
 
- Themes Discussed:
-o [Specific life events, thoughts, emotions, or interpersonal dynamics
-discussed.]
- Exploration:
-o [How the patient explored their thoughts, feelings, or behaviors related to the
-session themes.]
- Link to Past Sessions:
-o [Connections made to previous discussions or progress.]
-
-Patient’s Emotional Experience
- Emotional Expression: [Describe the patient’s emotional state during the session.]
- Emotional Shifts: [Any notable changes in emotional state throughout the session.]
-
-Therapeutic Techniques and Interventions
- [List specific techniques used, e.g., cognitive restructuring, grounding exercises,
-mindfulness, etc.]
- [Note patient’s response to these interventions.]
-
-Insights and Progress
- Patient’s Insights:
-o [Any realizations or shifts in perspective noted by the patient.]
- Progress Toward Goals:
-o [Evidence of movement toward therapy goals.]
-
-Obstacles and Challenges
- Resistance or Barriers: [Describe any defenses, avoidance, or challenges
-encountered.]
- Support Strategies: [Techniques used to address obstacles.]
-
-Transference/Countertransference
- Transference: [Patient’s projections or feelings toward the therapist.]
- Countertransference: [Therapist’s emotional reactions to the patient.]
-
-Risk Assessment
- Suicidal Ideation: [Details if present, including plans or protective factors.]
- Self-Harm: [Details of any behaviors or thoughts.]
- Other Risks: [Substance use, impulsivity, aggression, etc.]
-
-Session Summary
- [Summarize the session in 3–5 sentences, highlighting key themes, patient’s progress,
-and areas needing further attention.]
-
-Plan for Next Steps
- Next Session Goals: [What will be the focus for the next session?]
- Homework or Practice: [Any assignments given to the patient.]
- Therapist’s Notes: [Reflections or planning notes for future sessions.]
+Plan:
+I will monitor the client’s progress with adaptive responses and behavioral activation in the
+next session. We will explore deeper emotional underpinnings of depressive symptoms if
+necessary and introduce additional strategies to rebuild a sense of purpose and fulfillment as
+appropriate.
+]
+Strictly adhere to this structure for consistency and clarity.
                     """
         # Helper function to convert seconds to time
         def time(secs):
