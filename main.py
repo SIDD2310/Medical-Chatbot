@@ -1,7 +1,7 @@
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-sys.path.append('/usr/bin/ffmpeg')
+# __import__('pysqlite3')
+# import sys
+# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+# sys.path.append('/usr/bin/ffmpeg')
 import streamlit as st
 import os
 import hashlib
@@ -78,7 +78,7 @@ def generate_summary(prompt_chain):
 
     # Generate summary
 predefined_prompts_conflict = [
-    """
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title. Maintain provided headings and subheadings.:
     Medication History and Compliance:
     - Identify any discrepancies between:
       - Patient self-reports of medication adherence and documented records (e.g., progress notes, discharge summaries, pharmacy records).
@@ -89,7 +89,7 @@ predefined_prompts_conflict = [
       If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
-    """
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title. Maintain provided headings and subheadings.:
     Forensic History:
     - Highlight inconsistencies in legal or criminal history, such as:
       - Discrepancies between documents claiming no forensic history and records mentioning charges or convictions (e.g., shoplifting, trespassing).
@@ -99,7 +99,7 @@ predefined_prompts_conflict = [
       If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
-    """
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title. Maintain provided headings and subheadings.:
     Insight into Condition:
     - Identify conflicts in the patient's understanding of their mental health, including:
       - Patient denying symptoms or the need for treatment vs. clinical or family observations.
@@ -109,7 +109,7 @@ predefined_prompts_conflict = [
       If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
-    """
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title. Maintain provided headings and subheadings.:
     Family Dynamics:
     - Explore discrepancies in family input, including:
       - Differing perspectives from caregivers (e.g., supportive vs. dismissive attitudes).
@@ -119,7 +119,7 @@ predefined_prompts_conflict = [
       If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
-    """
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title. Maintain provided headings and subheadings.:
     Employment History:
     - Identify contradictions in the patient’s work history, such as:
       - Patient-reported job successes vs. employer reports of erratic behavior or dismissal.
@@ -129,7 +129,7 @@ predefined_prompts_conflict = [
       If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
-    """
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title. Maintain provided headings and subheadings.:
     Psychiatric Diagnoses and Co-Morbidities:
     - Highlight inconsistencies in documented diagnoses or co-morbid conditions, including:
       - Variability in reported diagnoses across different records.
@@ -142,33 +142,37 @@ predefined_prompts_conflict = [
 ]
 
 predefined_prompts_summary = [
-    """### Identifying Information
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    
+    ### Identifying Information
     - Full Name: 
     - Date of Birth (DOB): 
-    - Age (calculated age, noting deceased status if applicable): 
+    - Age (Only include number): 
     - Gender: 
     - Marital Status: 
     - Occupation: 
     - Living Situation: 
-    - Document Titles and Dates (list all uploaded documents with their titles and dates): 
-    - Author (your name): 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
     If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
-    
     """,
 
-    """### Reason for Referral
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+
+    ### Reason for Referral
     - Primary Concerns (describe the primary concerns or issues leading to the assessment or treatment): 
-    - Referral Source (identify the referral source, e.g., self, family, GP, court): 
-    Only give the answer to the questions asked. Do not provide any additional information.
-    Write it in short and in bullet points.
-    If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
+    - Referral Source (identify the referral source, e.g., self, family, GP, court, and include the date of referral): 
+
+    Only give the answer to the questions asked. Do not provide any additional information.  
+    Write it in short and in bullet points.  
+    If you don’t know the answer or if the provided context does not provide specific details or information, then don’t give any answer. Skip it.  
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Presenting Complaints
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    
+    ### Presenting Complaints
     - Current Symptoms (provide a detailed account of the patient’s most current symptoms, concerns, or challenges): 
     - Context/Triggers (include the context or triggers for recent episodes, if applicable): 
     - Duration and Progression (describe the duration and progression of symptoms): 
@@ -178,27 +182,33 @@ predefined_prompts_summary = [
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Psychiatric History
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    
+    ### Psychiatric History
     - Previous Diagnoses (organized by age at first diagnosis): 
       - Diagnosis: 
       - Age Diagnosed: 
-    - Psychiatric Hospitalizations or Presentations:
-      - Date or Age: 
-      - Presenting Symptoms: 
-      - Treatment Performed: 
-      - Social Work Input: 
-      - Medication Changes: 
-      - Length of Admission: 
-      - Significant Psychosocial Adjustments: 
-      - Significant Medical Events: 
+    - Psychiatric Hospitalizations or Presentations:  
+        Provide the information in paragraph form. Address each of the following points if the details are available:  
+        - Date or Age:  
+        - Presenting Symptoms:  
+        - Treatment Performed:  
+        - Social Work Input:  
+        - Medication Changes:  
+        - Length of Admission:  
+        - Significant Psychosocial Adjustments:  
+        - Significant Medical Events:  
+        
       Only give the answer to the questions asked. Do not provide any additional information.
       Write it in short and in bullet points.
       If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
       Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Medical History
-    - Past and Current Medical Conditions (include lab or diagnostic findings): 
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    
+    ### Medical History
+    - Past and Current Psychiatric and Medical conditions (include lab or diagnostic findings and also include dates with each): 
     - Surgical History (list previous surgical procedures): 
     - Allergies and Sensitivities (include drug, food, or other allergies): 
     Only give the answer to the questions asked. Do not provide any additional information.
@@ -207,7 +217,8 @@ predefined_prompts_summary = [
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Medications
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    ### Medications
     - Current Medications (include name and dosage if known): 
     - Past Psychiatric Medications (include name, dosage, dates of dose changes, and side effects): 
     Only give the answer to the questions asked. Do not provide any additional information.
@@ -216,7 +227,9 @@ predefined_prompts_summary = [
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Substance Use History
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    Follow the template below
+    ### Substance Use History
     - Alcohol Use: 
     - Drug Use: 
     - Other Substances: 
@@ -228,7 +241,9 @@ predefined_prompts_summary = [
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Family History
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    
+    ### Family History
     - Psychiatric Conditions in Family: 
     - Medical Conditions in Family: 
     - Family Dynamics: 
@@ -239,7 +254,9 @@ predefined_prompts_summary = [
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Developmental History
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    
+    ### Developmental History
     - Early Childhood: 
     - Milestones (physical, social, emotional, cognitive): 
     - Academic History: 
@@ -250,7 +267,8 @@ predefined_prompts_summary = [
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Social History
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    ### Social History
     - Educational History: 
     - Occupational History: 
     - Interpersonal Relationships: 
@@ -261,7 +279,9 @@ predefined_prompts_summary = [
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Forensic History
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    
+    ### Forensic History
     - Legal Issues (record any forensic or legal matters): 
     Only give the answer to the questions asked. Do not provide any additional information.
     Write it in short and in bullet points.
@@ -269,7 +289,9 @@ predefined_prompts_summary = [
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Mental Status Examination (MSE)
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    
+    ### Mental Status Examination (MSE)
     - Date of MSE: 
     - Appearance: 
     - Behavior: 
@@ -288,7 +310,9 @@ predefined_prompts_summary = [
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Functional Assessment
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    
+    ### Functional Assessment
     - Date of Functional Assessment: 
     - Daily Living Skills: 
     - Employment Capacity: 
@@ -300,7 +324,9 @@ predefined_prompts_summary = [
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Psychological Testing
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    
+    ### Psychological Testing
     - Testing Methods Used (e.g., IQ tests, personality assessments): 
     - Key Findings (results and interpretations): 
     Only give the answer to the questions asked. Do not provide any additional information.
@@ -309,14 +335,19 @@ predefined_prompts_summary = [
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Summary
-    - Overall Summary and Impression: 
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    
+    ### Summary
+    - Overall Summary and Impression:
+    Write the heading as Summary and then provide the answer to the questions asked. Do not provide any additional information. 
     Only give the answer to the questions asked. Do not provide any additional information.
     If you dont know the answer or if the provided context does not provide specific details or information then dont give any answer. Skip it.
     Give the headings and subheadings as they are and only provide the answers to the questions asked.
     """,
 
-    """### Current Recommendations
+    """You are a mental health professional tasked with writing notes. The report should include the following sections. If the information is not available, skip the section. Include the title:
+    
+    ### Current Recommendations
     - Recommendations by Professionals:
       - Date: 
       - Professional’s Name/Title: 
@@ -443,6 +474,23 @@ def process_docs(pdf_docs, TEMP, MODEL):
     st.session_state.conversation = get_conversation_chain(vectorstore, temp=TEMP, model=MODEL)
     st.session_state.pdf_processed = True
 
+
+def handle_userinput_1(user_question, prompt):
+    response = st.session_state.conversation({'question': (prompt+user_question)})
+    st.session_state.chat_history = response['chat_history']
+    with st.spinner('Generating response...'):
+        display_convo(prompt)
+        
+
+def display_convo(prompt):
+    with st.container():
+        for i, message in enumerate(reversed(st.session_state.chat_history)):
+            if i % 2 == 0:
+                st.markdown(bot_template.replace("{{MSG}}", message.content), unsafe_allow_html=True)
+            else:
+                st.markdown(user_template.replace("{{MSG}}", message.content[len(prompt):]), unsafe_allow_html=True)
+                
+                
 def main():
     st.set_page_config(page_title="Multi-Document Chat Bot", page_icon=":books:", layout="wide")
     st.write(css, unsafe_allow_html=True)
@@ -455,7 +503,7 @@ def main():
     if "conflict_output" not in st.session_state:
         st.session_state["conflict_output"] = ""
 
-    deploy_tab, code_tab, test = st.tabs(["Note Synthesis", "Ambient AI Note Generation", "Testing"])
+    deploy_tab, code_tab, test = st.tabs(["Note Synthesis", "Ambient AI Note Generation", "Treatment"])
     
     with deploy_tab:
         st.title("Note Synthesis")
@@ -736,7 +784,7 @@ Strictly adhere to this structure for consistency and clarity.
 
             
     with test:
-        st.title("Testing")
+        st.title("Treatment")
         if not pdf_docs:
             st.caption("Please Upload At Least 1 PDF")
             st.session_state.pdf_processed = False
@@ -750,11 +798,13 @@ Strictly adhere to this structure for consistency and clarity.
         PROMPT_TEMPLATE = "You are a helpful assistant"
         if st.session_state.get("pdf_processed") and st.session_state.api_authenticated:
             prompt = PROMPT_TEMPLATE
-            with st.form("user_input_form"):
+            with st.form("user_input_for"):
                 user_question = st.text_input("Ask a question about your documents:")
                 send_button = st.form_submit_button("Send")
             if send_button and user_question:
-                handle_userinput(user_question, prompt)
+                handle_userinput_1(user_question, prompt)
 
+
+            
 if __name__ == '__main__':
     main()
