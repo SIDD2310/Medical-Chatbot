@@ -1,7 +1,7 @@
-# __import__('pysqlite3')
-# import sys
-# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-# sys.path.append('/usr/bin/ffmpeg')
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+sys.path.append('/usr/bin/ffmpeg')
 import streamlit as st
 import os
 import hashlib
